@@ -1,0 +1,19 @@
+{
+    "name": "@timluq/mc-ctx",
+    "version": "0.1.0",
+    "author": {
+        "name": "TimLuq",
+        "email": "timluq+gitcommit@gmail.com"
+    },
+    "engines": {
+        "deno": ">=1.36.0"
+    },
+    "license": "MIT",
+    "type": "module",
+    "exports": {
+        "add": "./add.ts",
+        "list": "./list.ts",
+        "update": "./update.ts",
+        "remove": "./remove.ts"
+    }
+}
