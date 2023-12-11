@@ -2,10 +2,11 @@ import { CurrentlyInstalled, IPluginInstalled } from "./currently-installed.ts";
 import { Hangar } from "./hangar.ts";
 import { JsonFetch } from "./json.ts";
 import { Bukkit } from "./bukkit.ts";
+import { JarFetch } from "./jar.ts";
+import type { IPluginVersion } from "./service.ts";
 
 import { encodeHex } from "https://deno.land/std@0.208.0/encoding/hex.ts";
 import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
-import type { IPluginVersion } from "./service.ts";
 
 import type { SemVerRange } from "https://deno.land/std@0.208.0/semver/types.ts";
 import { parseRange } from "https://deno.land/std@0.208.0/semver/parse_range.ts";
@@ -23,6 +24,7 @@ export class Main {
   private readonly hangar = new Hangar();
   private readonly jsonFetch = new JsonFetch();
   private readonly bukkit = new Bukkit();
+  private readonly jarFetch = new JarFetch();
 
   private readonly pluginDir = "./plugins";
   private readonly completed: Array<Promise<boolean>> = [];
@@ -60,6 +62,8 @@ export class Main {
       return this.bukkit;
     } else if (service === "json") {
       return this.jsonFetch;
+    } else if (service === "jar") {
+      return this.jarFetch;
     } else {
       return null;
     }

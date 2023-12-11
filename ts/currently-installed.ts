@@ -99,6 +99,9 @@ export class CurrentlyInstalled {
     if (found.version === plugin.version) {
       return false;
     }
+    if (!log.history) {
+      log.history = {};
+    }
     const rem = found as IPluginRemoved;
     rem.removed = plugin.installed;
     const hist = log.history[plugin.name] = log.history[plugin.name] ?? [];

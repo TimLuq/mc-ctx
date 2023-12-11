@@ -43,7 +43,7 @@ if [ "$subcmd" == "plugins" ]; then
 fi
 
 if [ "$subcmd" == "restart" ] || [ "$subcmd" == "start" ]; then
-    (cd "$(dirname "$p")" && (docker-compose pull; docker-compose up -d) )
+    (cd "$(dirname "$p")" && (docker compose pull; docker compose up -d) )
     exit $?
 fi
 
