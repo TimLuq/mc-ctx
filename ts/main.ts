@@ -19,6 +19,10 @@ export interface IPluginRequest {
   versionRange?: SemVerRange;
 }
 
+export interface IMainContext {
+  chown?: { uid: number | null; gid: number | null };
+}
+
 export class Main {
   private readonly currentlyInstalled = new CurrentlyInstalled();
   private readonly hangar = new Hangar();
@@ -27,7 +31,47 @@ export class Main {
   private readonly jarFetch = new JarFetch();
 
   private readonly pluginDir = "./plugins";
+  private readonly chown: undefined | { uid: number | null; gid: number | null } = undefined;
   private readonly completed: Array<Promise<boolean>> = [];
+
+  public constructor(options?: IMainContext) {
+    this.chown = options?.chown;
+  }
+
+  public static validateMainContext(
+    context: unknown,
+  ): context is IMainContext {
+    if (typeof context !== "object" || context === null) {
+      return false;
+    }
+    {
+      const chown = (context as { chown?: unknown }).chown;
+      if (chown !== undefined) {
+        if (typeof chown !== "object" || chown === null) {
+          throw new Error("context.chown must be an object");
+        }
+        if (typeof (chown as { uid?: unknown }).uid !== "number" &&
+          (chown as { uid?: unknown }).uid !== null) {
+          throw new Error("context.chown.uid must be a number or null");
+        }
+        if (typeof (chown as { gid?: unknown }).gid !== "number" &&
+          (chown as { gid?: unknown }).gid !== null) {
+          throw new Error("context.chown.gid must be a number or null");
+        }
+        for (const key in chown) {
+          if (!["uid", "gid"].includes(key)) {
+            console.warn(`Unknown key in context.chown: ${JSON.stringify(key)}`);
+          }
+        }
+      }
+    }
+    for (const key in context) {
+      if (!["chown"].includes(key)) {
+        console.warn(`Unknown key in context: ${JSON.stringify(key)}`);
+      }
+    }
+    return true;
+  }
 
   public update(plugins: IPluginRequest[]) {
     for (const plugin of plugins) {
@@ -149,6 +193,9 @@ export class Main {
     }
     const [tmpFile, inst] = await this.downloadFile(plugin, ver);
     const expectedPath = this.pluginDir + "/" + expectedName;
+    if (this.chown) {
+      await Deno.chown(tmpFile, this.chown.uid, this.chown.gid);
+    }
     await Deno.rename(tmpFile, expectedPath);
     const rem = await this.currentlyInstalled.add(inst);
     if (rem) {

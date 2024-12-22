@@ -1,4 +1,16 @@
 import { type IPluginRequest, Main } from "./ts/main.ts";
+const ctxP = fetch(import.meta.url.replace(/[^/]+$/, "context.json")).then(
+  (res) => {
+    if (res.status == 404) {
+      return {};
+    }
+    if (!res.ok) {
+      throw new Error("Failed to fetch context.json");
+    }
+    return res.json()
+  },
+  () => ({}),
+);
 
 const args = Deno.args;
 if (args.length === 0) {
@@ -59,7 +71,11 @@ for (const arg of args) {
   });
 }
 
-const main = new Main();
+const ctx = await ctxP;
+if (!Main.validateMainContext(ctx)) {
+  throw new Error("Invalid context");
+}
+const main = new Main(ctx);
 main.update(plugins);
 if (await main.wait()) {
   const path = "./plugins.json";
