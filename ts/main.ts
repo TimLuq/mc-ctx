@@ -1,5 +1,6 @@
 import { CurrentlyInstalled, IPluginInstalled } from "./currently-installed.ts";
 import { Hangar } from "./hangar.ts";
+import { Modrinth } from "./modrinth.ts";
 import { JsonFetch } from "./json.ts";
 import { Bukkit } from "./bukkit.ts";
 import { JarFetch } from "./jar.ts";
@@ -26,6 +27,7 @@ export interface IMainContext {
 export class Main {
   private readonly currentlyInstalled = new CurrentlyInstalled();
   private readonly hangar = new Hangar();
+  private readonly modrinth = new Modrinth();
   private readonly jsonFetch = new JsonFetch();
   private readonly bukkit = new Bukkit();
   private readonly jarFetch = new JarFetch();
@@ -102,6 +104,8 @@ export class Main {
   private getService(service: string): Hangar | Bukkit | JsonFetch | null {
     if (service === "Hangar") {
       return this.hangar;
+    } else if (service === "Modrinth") {
+      return this.modrinth;
     } else if (service === "Bukkit") {
       return this.bukkit;
     } else if (service === "json") {
@@ -238,18 +242,31 @@ export class Main {
       }
       const file = await Deno.open(tmpFile, { read: true });
       const statP = file.stat();
-      const readableStream = file.readable;
-      const fileHashBuffer = await crypto.subtle.digest(
+      const [readableStream256, readableStream512] = file.readable.tee();
+      const fileHash256BufferP = crypto.subtle.digest(
         "SHA-256",
-        readableStream,
+        readableStream256,
       );
-      const fileHash = encodeHex(fileHashBuffer);
+      const fileHash512BufferP = crypto.subtle.digest(
+        "SHA-512",
+        readableStream512,
+      );
+      const fileHash256 = encodeHex(await fileHash256BufferP);
+      const fileHash512 = encodeHex(await fileHash512BufferP);
       if (
-        ver.download.sha256 !== undefined && ver.download.sha256 !== fileHash
+        ver.download.sha256 !== undefined && ver.download.sha256 !== fileHash256
       ) {
         throw new Error(
-          "Downloaded file hash mismatch: " + ver.download.sha256 + " != " +
-            fileHash,
+          "Downloaded file sha256 mismatch: " + ver.download.sha256 + " != " +
+            fileHash256,
+        );
+      }
+      if (
+        ver.download.sha512 !== undefined && ver.download.sha512 !== fileHash512
+      ) {
+        throw new Error(
+          "Downloaded file sha512 mismatch: " + ver.download.sha512 + " != " +
+            fileHash256,
         );
       }
       const stat = await statP;
@@ -258,7 +275,8 @@ export class Main {
         versionRange: undefined,
         version: ver.version,
         url: ver.download.url,
-        sha256: fileHash,
+        sha256: fileHash256,
+        sha512: fileHash512,
         size: stat.size,
         installed: stat.mtime?.getTime() ?? Date.now(),
       };

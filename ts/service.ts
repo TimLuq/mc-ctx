@@ -7,6 +7,7 @@ export interface IPluginVersion {
 export interface IPluginDownload {
   readonly url: string;
   readonly sha256?: string;
+  readonly sha512?: string;
   readonly size?: number;
 }
 

@@ -37,6 +37,12 @@ for (const arg of args) {
       /\/.*$/,
       "",
     );
+  } else if (name.startsWith("https://modrinth.com/plugin/")) {
+    service = "Modrinth";
+    name = name.substring("https://modrinth.com/plugin/".length).replace(
+      /\/.*$/,
+      "",
+    );
   } else if (/^(?:bukkit:)?[a-zA-Z0-9-]+@.+$/.test(name)) {
     const idx = name.indexOf("@");
     service = "Bukkit";
@@ -53,13 +59,21 @@ for (const arg of args) {
   } else if (/^(?:hangar:)?[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+$/.test(name)) {
     service = "Hangar";
     name = name.replace(/^hangar:/, "");
+  } else if (/^(?:modrinth:)?[a-zA-Z0-9-]+@.+$/.test(name)) {
+    const idx = name.indexOf("@");
+    service = "Modrinth";
+    version = name.substring(idx + 1);
+    name = name.substring(0, idx).replace(/^modrinth:/, "");
+  } else if (/^(?:modrinth:)?[a-zA-Z0-9-]+$/.test(name)) {
+    service = "Modrinth";
+    name = name.replace(/^modrinth:/, "");
   } else {
     console.error("Unknown plugin format: " + name);
     Deno.exit(1);
   }
   let plugin = name;
   name = name.replace(/^.*\//, "");
-  if (service === "Bukkit") {
+  if (service === "Bukkit" || service === "Modrinth") {
     plugin = plugin.toLowerCase();
   }
 
@@ -67,7 +81,7 @@ for (const arg of args) {
     name,
     service,
     plugin,
-    version: version,
+    version,
   });
 }
 
